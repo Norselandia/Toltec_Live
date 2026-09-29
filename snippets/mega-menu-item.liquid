@@ -1,0 +1,190 @@
+{%- doc -%}
+  Renders one top-level nav <li>: the trigger link, plus (if it has
+  children) a compact secondary dropdown anchored directly under it —
+  not a full-width mega menu. The dropdown shows a category image on the
+  left and a simple two-level (Level-2 / Level-3) link list. Hovering or
+  focusing a Level-2/3 link swaps the image to that link's own collection
+  image (falling back to its first product's image), reverting to the
+  top-level image when nothing sub-level is hovered/focused.
+
+  Shared by both the single-row (overflow-list) and two-row nav layouts in
+  header-menu.liquid so the markup never has to be maintained twice.
+
+  @param {object} link - the menu link (block_settings.menu.links item)
+  @param {number} index - unique index for this link, used to build ids (pass forloop.index or a running counter)
+  @param {string} background_color_classes
+  @param {object} background_color - color object used as the dropdown's background
+  @param {object} section
+  @param {string} menu_content_type
+  @param {string} ratio
+  @param {number} image_border_radius
+  @param {object} block_settings
+  @param {array} menu_item_colors - block.blocks; entries of type 'menu-item-color' are matched against this link's handle
+{%- enddoc -%}
+
+{% liquid
+  assign show_menu_image = block_settings.show_menu_image
+
+  # Per-item color override: matches this link's handle against any
+  # 'menu-item-color' child block's `menu_handle` setting. Shopify menus
+  # don't support per-link settings directly, so this is set up as a
+  # merchant-addable block per item instead (see blocks/menu-item-color.liquid).
+  assign item_background_color = null
+  assign item_text_color = null
+  for color_block in menu_item_colors
+    if color_block.type == 'menu-item-color' and color_block.settings.menu_handle == link.handle
+      assign item_background_color = color_block.settings.background_color
+      assign item_text_color = color_block.settings.text_color
+    endif
+  endfor
+  assign has_item_color = false
+  if item_background_color or item_text_color
+    assign has_item_color = true
+  endif
+
+  # link.object resolves to the linked resource (e.g. the Collection) when
+  # the link points at a collection. Custom URLs / pages return nil here,
+  # so images are simply skipped for those.
+  assign menu_image = null
+  if link.object.image
+    assign menu_image = link.object.image
+  elsif link.object.products.first.featured_image
+    assign menu_image = link.object.products.first.featured_image
+  endif
+
+  # If the top-level link itself has no image, use the first Level-2 image
+  # we can find as the dropdown's starting image, so the image column still
+  # has something to show before any sub-item is hovered.
+  if menu_image == null
+    for level_2 in link.links
+      if menu_image == null
+        if level_2.object.image
+          assign menu_image = level_2.object.image
+        elsif level_2.object.products.first.featured_image
+          assign menu_image = level_2.object.products.first.featured_image
+        endif
+      endif
+    endfor
+  endif
+
+  assign has_image = false
+  if show_menu_image and menu_image
+    assign has_image = true
+  endif
+%}
+
+<li
+  role="presentation"
+  class="menu-list__list-item"
+  on:focus="/activate"
+  on:blur="/deactivate"
+  on:pointerenter="/activate"
+  on:pointerleave="/deactivate"
+>
+  <a
+    href="{{ link.url }}"
+    data-skip-node-update="true"
+    class="menu-list__link{% if link.active %} menu-list__link--active{% endif %}{% if has_item_color %} menu-list__link--custom-color{% endif %}"
+    {%- if has_item_color -%}
+      style="
+        {%- if item_background_color -%}--menu-item-bg: rgb({{ item_background_color.rgb }});{%- endif -%}
+        {%- if item_text_color -%}--menu-item-text: rgb({{ item_text_color.rgb }});{%- endif -%}
+      "
+    {%- endif -%}
+    {%- if link.links != blank -%}
+      aria-controls="submenu-{{ index }}"
+      aria-haspopup="true"
+      aria-expanded="false"
+    {%- endif -%}
+    {% if link.current %}
+      aria-current="page"
+    {% endif %}
+    ref="menuitem"
+  >
+    <span class="menu-list__link-title">{{- link.title -}}</span>
+  </a>
+  {%- if link.links != blank -%}
+    <div
+      id="submenu-{{ index }}"
+      class="menu-list__dropdown{{ background_color_classes }}{% if has_image %} menu-list__dropdown--has-image{% endif %}"
+      ref="submenu[]"
+      style="--dropdown-bg: rgb({{ background_color.rgb }});"
+    >
+      <div class="menu-list__dropdown-inner{% if has_image %} menu-list__dropdown-inner--with-image{% endif %}">
+        {% if has_image %}
+          <div class="mega-menu__image-col">
+            <a href="{{ link.url }}" tabindex="-1" aria-hidden="true" class="mega-menu__image-link">
+              <img
+                src="{{ menu_image | image_url: width: 300 }}"
+                srcset="
+                  {{- menu_image | image_url: width: 150 }} 150w,
+                  {{ menu_image | image_url: width: 300 }} 300w
+                "
+                sizes="110px"
+                alt="{{ menu_image.alt | default: link.title | escape }}"
+                width="{{ menu_image.width }}"
+                height="{{ menu_image.height }}"
+                loading="lazy"
+                class="mega-menu__image"
+                style="border-radius: {{ image_border_radius }}px;"
+              >
+            </a>
+          </div>
+        {% endif %}
+
+        <div class="mega-menu__content-col">
+          <ul class="dropdown-menu__list list-unstyled">
+            {% for level_2 in link.links %}
+              {% liquid
+                assign level_2_image = null
+                if level_2.object.image
+                  assign level_2_image = level_2.object.image
+                elsif level_2.object.products.first.featured_image
+                  assign level_2_image = level_2.object.products.first.featured_image
+                endif
+              %}
+              <li class="dropdown-menu__group">
+                <a
+                  href="{{ level_2.url }}"
+                  class="dropdown-menu__link dropdown-menu__link--parent"
+                  {% if show_menu_image and level_2_image %}
+                    data-menu-image="{{ level_2_image | image_url: width: 300 }}"
+                    data-menu-image-alt="{{ level_2_image.alt | default: level_2.title | escape }}"
+                  {% endif %}
+                >
+                  {{- level_2.title -}}
+                </a>
+                {% if level_2.links != blank %}
+                  <ul class="dropdown-menu__sublist list-unstyled">
+                    {% for level_3 in level_2.links %}
+                      {% liquid
+                        assign level_3_image = null
+                        if level_3.object.image
+                          assign level_3_image = level_3.object.image
+                        elsif level_3.object.products.first.featured_image
+                          assign level_3_image = level_3.object.products.first.featured_image
+                        endif
+                      %}
+                      <li>
+                        <a
+                          href="{{ level_3.url }}"
+                          class="dropdown-menu__link"
+                          {% if show_menu_image and level_3_image %}
+                            data-menu-image="{{ level_3_image | image_url: width: 300 }}"
+                            data-menu-image-alt="{{ level_3_image.alt | default: level_3.title | escape }}"
+                          {% endif %}
+                        >
+                          {{- level_3.title -}}
+                        </a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  {%- endif -%}
+</li>

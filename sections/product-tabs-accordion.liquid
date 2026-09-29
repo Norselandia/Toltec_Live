@@ -1,0 +1,766 @@
+{% comment %}
+  ============================================================
+  Product Tabs Accordion — Horizon theme (Toltec Home)
+  ------------------------------------------------------------
+  Adapted from the Varaluz.com / Varaluz Horizon
+  product-tabs-accordion section. Same structural pattern
+  (metafield field-maps → labeled rows inside <details> tabs,
+  single-open JS, Horizon design tokens) rebuilt against
+  Toltec Home's metafield set.
+
+  Field rows are rendered via the 'product-metafields-tabs'
+  snippet (Toltec version). All metafields live in the
+  `custom` namespace.
+  ============================================================
+{% endcomment %}
+
+{% assign v = product.selected_or_first_available_variant %}
+
+{%- comment -%}
+  ===== Field maps =====
+  Format per entry: "namespace:metafield_key|block.setting_id"
+{%- endcomment -%}
+
+{% assign details_fields = 'custom:product_type|product_type_label,
+  custom:mfg_category|mfg_category_label,
+  custom:style|style_label,
+  custom:secondary_style|secondary_style_label,
+  custom:finish|finish_label,
+  custom:material|material_label,
+  custom:shade_type|shade_type_label,
+  custom:mounting_type|mounting_type_label,
+  custom:warranty|warranty_label,
+  custom:listing_and_rating|listing_and_rating_label,
+  custom:safety_listing|safety_listing_label,
+  custom:manufactured_in|manufactured_in_label,
+  custom:sku|sku_label,
+  custom:Care_Instructions|care_instructions_label'
+  | split: ','
+%}
+
+{% assign features_fields = 'custom:selling_features|features_label'
+  | split: ','
+%}
+
+{% assign lamping_fields = 'custom:light_source|light_source_label,
+  custom:lamping|lamping_label,
+  custom:light_bulb_included|light_bulb_included_label,
+  custom:number_of_sockets|number_of_sockets_label,
+  custom:max_wattage|max_wattage_label,
+  custom:delivered_lumens|delivered_lumens_label,
+  custom:color_temp|color_temp_label,
+  custom:cri|cri_label,
+  custom:voltage|voltage_label,
+  custom:socket_type|socket_type_label,
+  custom:bulb_shape|bulb_shape_label,
+  custom:dimmable|dimmable_label,
+  custom:powersource_connection|powersource_connection_label'
+  | split: ','
+%}
+
+{% assign dimensions_fields = 'custom:width_in_inches|width_label,
+  custom:height_in|height_label,
+  custom:length|length_label,
+  custom:depth_extension_in_inches|depth_label,
+  custom:weight|weight_label,
+  custom:chain_length|chain_length_label,
+  custom:hang_wire_length|hang_wire_length_label,
+  custom:hang_rod_length|hang_rod_length_label,
+  custom:shade_size|shade_size_label,
+  custom:backplate_dimension|backplate_dimension_label'
+  | split: ','
+%}
+
+{% assign shipping_fields_1 = 'custom:shipping_length_container_1|shipping_length_label,
+  custom:shipping_depth_container_1|shipping_depth_label,
+  custom:shipping_height_container_1|shipping_height_label,
+  custom:shipping_weight_1|shipping_weight_label'
+  | split: ','
+%}
+
+{% assign shipping_fields_2 = 'custom:shipping_length_container_2|shipping_length_label,
+  custom:shipping_depth_container_2|shipping_depth_label,
+  custom:shipping_height_container_2|shipping_height_label,
+  custom:shipping_weight_2|shipping_weight_label'
+  | split: ','
+%}
+
+<div
+  class="product-tabs-accordion border-style spacing-style{% if section.settings.inherit_color_scheme == false %} color-{{ section.settings.color_scheme }}{% endif %}{% if section.settings.dividers %} product-tabs-accordion--dividers{% endif %} product-tabs-accordion--{{ section.settings.icon }}"
+  style="
+    --summary-font-family: var(--font-{{ section.settings.type_preset }}--family);
+    --summary-font-style: var(--font-{{ section.settings.type_preset }}--style);
+    --summary-font-weight: var(--font-{{ section.settings.type_preset }}--weight);
+    --summary-font-size: var(--font-{{ section.settings.type_preset }}--size);
+    --summary-font-line-height: var(--font-{{ section.settings.type_preset }}--line-height);
+    --summary-font-case: var(--font-{{ section.settings.type_preset }}--case);
+    {% render 'spacing-style', settings: section.settings %}
+    {% render 'border-override', settings: section.settings %}
+  "
+  data-product-tabs-accordion
+>
+  {% assign acc_index = 0 %}
+
+  {% for b in section.blocks %}
+
+    {%- comment -%} ============== DETAILS TAB ============== {%- endcomment -%}
+    {% if b.type == 'tab_item_details' %}
+      <details
+        class="product-tabs-accordion__item"
+        {% if acc_index == 0 %}closed{% endif %}
+        {{ b.shopify_attributes }}
+      >
+        <summary class="product-tabs-accordion__summary">
+          <span class="product-tabs-accordion__heading">{{ b.settings.tab_label }}</span>
+          <span class="product-tabs-accordion__icon" aria-hidden="true"></span>
+        </summary>
+        <div class="product-tabs-accordion__content">
+          {% if product.description != blank %}
+            <div class="product-tabs-accordion__body-html">
+              <strong>{{ b.settings.product_web_desc_label }}</strong>
+              {{ product.description }}
+            </div>
+          {% endif %}
+
+          {% render 'product-metafields-tabs', fields_array: details_fields, v: v, b: b, product: product %}
+
+          {% assign ships_via = product.metafields.custom.ships_via %}
+          {% if ships_via != blank %}
+            <p><strong>{{ b.settings.shipping_method_label }}:</strong> {{ ships_via }}</p>
+          {% endif %}
+
+          {% if b.settings.california_button_text != blank %}
+            <div class="california-warning">
+              {% if b.settings.california_label != blank %}
+                <strong><span class="california-warning__label">{{ b.settings.california_label }}:</span></strong>
+              {% endif %}
+              <button type="button" class="california-warning__btn" aria-expanded="false">
+                {{ b.settings.california_button_text }}
+              </button>
+              <div class="california-warning__popup" hidden>
+                <p>
+                  <strong>⚠️ California Proposition 65</strong><br>
+                  Warning: This product can expose you to carbon black, which is known to the State of California to cause cancer, birth defects or other reproductive harm. For more information go to
+                  <a href="https://www.p65warnings.ca.gov" target="_blank" rel="noopener noreferrer">www.P65Warnings.ca.gov</a>
+                </p>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </details>
+      {% assign acc_index = acc_index | plus: 1 %}
+
+
+    {%- comment -%} ============== FEATURES TAB ============== {%- endcomment -%}
+    {% elsif b.type == 'tab_item_features' %}
+      {% assign variant_features = v.metafields.variant.selling_features %}
+      {% assign product_features = product.metafields.custom.selling_features %}
+      {% assign selling_features = variant_features | default: product_features %}
+      {% if selling_features != blank %}
+        <details
+          class="product-tabs-accordion__item"
+          {% if acc_index == 0 %}open{% endif %}
+          {{ b.shopify_attributes }}
+        >
+          <summary class="product-tabs-accordion__summary">
+            <span class="product-tabs-accordion__heading">{{ b.settings.tab_label }}</span>
+            <span class="product-tabs-accordion__icon" aria-hidden="true"></span>
+          </summary>
+          <div class="product-tabs-accordion__content">
+            {% render 'product-metafields-tabs', fields_array: features_fields, v: v, b: b, product: product %}
+          </div>
+        </details>
+        {% assign acc_index = acc_index | plus: 1 %}
+      {% endif %}
+
+
+    {%- comment -%} ============== LAMPING TAB ============== {%- endcomment -%}
+    {% elsif b.type == 'tab_item_lamping' %}
+      {%- assign product_type_down = product.metafields.custom.product_type | default: '' | downcase -%}
+      {% unless product_type_down contains 'mirror' %}
+        {% assign has_lamping_data = false %}
+        {% for field in lamping_fields %}
+          {% assign parts = field | strip | split: '|' %}
+          {% assign mf_ref = parts[0] | split: ':' %}
+          {% assign namespace = mf_ref[0] %}
+          {% assign key = mf_ref[1] %}
+          {% assign variant_check = v.metafields.variant[key] %}
+          {% assign product_check = product.metafields[namespace][key] %}
+          {% assign check_val = variant_check | default: product_check %}
+          {% if check_val != blank %}
+            {% assign has_lamping_data = true %}
+          {% endif %}
+        {% endfor %}
+
+        {% if has_lamping_data %}
+          <details
+            class="product-tabs-accordion__item"
+            {% if acc_index == 0 %}open{% endif %}
+            {{ b.shopify_attributes }}
+          >
+            <summary class="product-tabs-accordion__summary">
+              <span class="product-tabs-accordion__heading">{{ b.settings.tab_label }}</span>
+              <span class="product-tabs-accordion__icon" aria-hidden="true"></span>
+            </summary>
+            <div class="product-tabs-accordion__content">
+              {% render 'product-metafields-tabs', fields_array: lamping_fields, v: v, b: b, product: product %}
+            </div>
+          </details>
+          {% assign acc_index = acc_index | plus: 1 %}
+        {% endif %}
+      {% endunless %}
+
+
+    {%- comment -%} ============== DIMENSIONS TAB ============== {%- endcomment -%}
+    {% elsif b.type == 'tab_item_dimensions' %}
+      <details
+        class="product-tabs-accordion__item"
+        {% if acc_index == 0 %}open{% endif %}
+        {{ b.shopify_attributes }}
+      >
+        <summary class="product-tabs-accordion__summary">
+          <span class="product-tabs-accordion__heading">{{ b.settings.tab_label }}</span>
+          <span class="product-tabs-accordion__icon" aria-hidden="true"></span>
+        </summary>
+        <div class="product-tabs-accordion__content">
+          {% render 'product-metafields-tabs', fields_array: dimensions_fields, v: v, b: b, product: product %}
+
+          {% assign has_shipping_data_1 = false %}
+          {% for field in shipping_fields_1 %}
+            {% assign parts = field | strip | split: '|' %}
+            {% assign mf_ref = parts[0] | split: ':' %}
+            {% assign namespace = mf_ref[0] %}
+            {% assign key = mf_ref[1] %}
+            {% assign variant_check = v.metafields.variant[key] %}
+            {% assign product_check = product.metafields[namespace][key] %}
+            {% assign check_val = variant_check | default: product_check %}
+            {% if check_val != blank %}
+              {% assign has_shipping_data_1 = true %}
+            {% endif %}
+          {% endfor %}
+
+          {% if has_shipping_data_1 %}
+            {% if b.settings.shipping_heading != blank %}
+              <h3 class="lamping-heading">{{ b.settings.shipping_heading }}</h3>
+            {% endif %}
+            {% render 'product-metafields-tabs', fields_array: shipping_fields_1, v: v, b: b, product: product %}
+          {% endif %}
+
+          {% assign has_shipping_data_2 = false %}
+          {% for field in shipping_fields_2 %}
+            {% assign parts = field | strip | split: '|' %}
+            {% assign mf_ref = parts[0] | split: ':' %}
+            {% assign namespace = mf_ref[0] %}
+            {% assign key = mf_ref[1] %}
+            {% assign variant_check = v.metafields.variant[key] %}
+            {% assign product_check = product.metafields[namespace][key] %}
+            {% assign check_val = variant_check | default: product_check %}
+            {% if check_val != blank %}
+              {% assign has_shipping_data_2 = true %}
+            {% endif %}
+          {% endfor %}
+
+          {% if has_shipping_data_2 %}
+            {% if b.settings.shipping_heading_2 != blank %}
+              <h3 class="lamping-heading">{{ b.settings.shipping_heading_2 }}</h3>
+            {% endif %}
+            {% render 'product-metafields-tabs', fields_array: shipping_fields_2, v: v, b: b, product: product %}
+          {% endif %}
+        </div>
+      </details>
+      {% assign acc_index = acc_index | plus: 1 %}
+
+
+    {%- comment -%} ============== TECHNICAL TAB ============== {%- endcomment -%}
+    {% elsif b.type == 'tab_item_technical' %}
+      {% assign prodspec_url = product.metafields.custom.prodspecurl %}
+      {% assign instruction_url = product.metafields.custom.instruction_sheet %}
+      {% assign dimensional_image_url = product.metafields.custom.dimensional_image_url %}
+
+      {% if prodspec_url != blank or instruction_url != blank or dimensional_image_url != blank %}
+        <details
+          class="product-tabs-accordion__item"
+          {% if acc_index == 0 %}open{% endif %}
+          {{ b.shopify_attributes }}
+        >
+          <summary class="product-tabs-accordion__summary">
+            <span class="product-tabs-accordion__heading">{{ b.settings.tab_label }}</span>
+            <span class="product-tabs-accordion__icon" aria-hidden="true"></span>
+          </summary>
+          <div class="product-tabs-accordion__content">
+            <ul class="technical-resources-list">
+              {% if prodspec_url != blank %}
+                <li class="technical-resources-list__item">
+                  <a href="{{ prodspec_url.value }}" download target="_blank" rel="noopener noreferrer">
+                    <img
+                      src="https://cdn.shopify.com/s/files/1/0977/6024/files/new-document.png?v=1758700230"
+                      alt=""
+                      width="24"
+                      height="24"
+                    >
+                    <span>{{ b.settings.prodspec_label | default: 'Product Spec Sheet' }}</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% if instruction_url != blank %}
+                <li class="technical-resources-list__item">
+                  <a href="{{ instruction_url.value }}" download target="_blank" rel="noopener noreferrer">
+                    <img
+                      src="https://cdn.shopify.com/s/files/1/0977/6024/files/new-document.png?v=1758700230"
+                      alt=""
+                      width="24"
+                      height="24"
+                    >
+                    <span>{{ b.settings.instruction_label | default: 'Installation/Assembly Sheet' }}</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% if dimensional_image_url != blank %}
+                <li class="technical-resources-list__item">
+                  <a href="{{ dimensional_image_url.value }}" download target="_blank" rel="noopener noreferrer">
+                    <img
+                      src="https://cdn.shopify.com/s/files/1/0977/6024/files/new-document.png?v=1758700230"
+                      alt=""
+                      width="24"
+                      height="24"
+                    >
+                    <span>{{ b.settings.dimensional_image_label | default: 'Dimensional Drawing' }}</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
+        </details>
+        {% assign acc_index = acc_index | plus: 1 %}
+      {% endif %}
+
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% stylesheet %}
+  .product-tabs-accordion {
+    width: 100%;
+  }
+
+  @media screen and (min-width: 750px) {
+    .product-tabs-accordion {
+      max-width: 90%;
+      margin-inline: auto;
+    }
+  }
+
+  .product-tabs-accordion__item {
+    border-block-end: var(--style-border-width, 1px) solid #5a302e;
+  }
+
+  .product-tabs-accordion--dividers .product-tabs-accordion__item:first-child {
+    border-block-start: var(--style-border-width, 1px) solid var(--color-border);
+  }
+
+  .product-tabs-accordion__item:not(:last-child) {
+    border-block-end: var(--style-border-width, 1px) solid var(--color-border);
+  }
+
+  .product-tabs-accordion__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--padding-md, 14px);
+    padding-inline: var(--padding-lg, 20px);
+    cursor: pointer;
+    list-style: none;
+    min-height: var(--minimum-touch-target, 44px);
+    font-family: var(--summary-font-family);
+    font-style: var(--summary-font-style);
+    font-weight: var(--summary-font-weight);
+    font-size: var(--summary-font-size);
+    line-height: var(--summary-font-line-height);
+    text-transform: var(--summary-font-case);
+  }
+
+  .product-tabs-accordion__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .product-tabs-accordion__summary:hover {
+    background:  #5a302e;
+    opacity: .5;
+  }
+
+  .product-tabs-accordion__item[open] > .product-tabs-accordion__summary {
+    background: #5a302e;
+    color: var(--color-background);
+  }
+
+  .product-tabs-accordion__icon {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+    margin-inline-start: 10px;
+  }
+
+  .product-tabs-accordion__item[open] > .product-tabs-accordion__summary .product-tabs-accordion__icon {
+    transform: rotate(-135deg);
+  }
+
+  .product-tabs-accordion--plus .product-tabs-accordion__icon {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    border: none;
+    transform: none;
+  }
+
+  .product-tabs-accordion--plus .product-tabs-accordion__icon::before,
+  .product-tabs-accordion--plus .product-tabs-accordion__icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: currentColor;
+  }
+
+  .product-tabs-accordion--plus .product-tabs-accordion__icon::before {
+    width: 14px;
+    height: 2px;
+  }
+
+  .product-tabs-accordion--plus .product-tabs-accordion__icon::after {
+    width: 2px;
+    height: 14px;
+    transition: transform 0.25s ease;
+  }
+
+  .product-tabs-accordion--plus .product-tabs-accordion__item[open] > .product-tabs-accordion__summary .product-tabs-accordion__icon::after {
+    transform: rotate(90deg);
+  }
+
+  .product-tabs-accordion__content {
+    padding-block: var(--padding-md, 16px);
+    padding-inline: var(--padding-lg, 20px);
+  }
+
+  .california-warning {
+    margin-block-start: var(--padding-md, 16px);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .california-warning__btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  .california-warning__popup {
+    position: absolute;
+    inset-block-start: calc(100% + 8px);
+    inset-inline-start: 0;
+    z-index: 10;
+    max-width: 360px;
+    padding: 12px 14px;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .technical-resources-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .technical-resources-list__item {
+    margin-block-end: 8px;
+    border: 2.5px dashed var(--color-border);
+    padding: 10px;
+  }
+
+  .technical-resources-list__item a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+
+  }
+
+.technical-resources-list__item img{
+  height: 50px !important;
+  width: auto;
+}
+  .technical-resources-list__item span {
+    padding: 5px;
+    border: 1px solid var(--color-border);
+  }
+
+  .lamping-heading {
+    padding: 6px 10px;
+    margin-block: var(--padding-md, 16px) var(--padding-sm, 8px);
+  }
+
+  .product-tabs-accordion__body-html {
+    line-height: 1.5;
+  }
+
+  .product-tabs-accordion__body-html p {
+    margin-block: 0 0.75em;
+  }
+{% endstylesheet %}
+
+<script>
+  // Enforce single-open behavior across all tabs in this accordion.
+  (function () {
+    const root = document.currentScript.previousElementSibling;
+    if (!root) return;
+    const acc = root.closest('[data-product-tabs-accordion]') || document.querySelector('[data-product-tabs-accordion]');
+    if (!acc) return;
+
+    const items = acc.querySelectorAll('details.product-tabs-accordion__item');
+    items.forEach((item) => {
+      item.addEventListener('toggle', () => {
+        if (item.open) {
+          items.forEach((other) => {
+            if (other !== item && other.open) other.open = false;
+          });
+        }
+      });
+    });
+
+    acc.querySelectorAll('.california-warning').forEach((wrap) => {
+      const btn = wrap.querySelector('.california-warning__btn');
+      const popup = wrap.querySelector('.california-warning__popup');
+      if (!btn || !popup) return;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!isOpen));
+        popup.hidden = isOpen;
+      });
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) {
+          btn.setAttribute('aria-expanded', 'false');
+          popup.hidden = true;
+        }
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Product Tabs Accordion",
+  "tag": "section",
+  "class": "section-product-tabs-accordion",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "Icon",
+      "options": [
+        { "value": "caret", "label": "Caret" },
+        { "value": "plus",  "label": "Plus"  }
+      ],
+      "default": "caret"
+    },
+    {
+      "type": "checkbox",
+      "id": "dividers",
+      "label": "Show dividers",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "type_preset",
+      "label": "Heading preset",
+      "options": [
+        { "value": "",           "label": "Default" },
+        { "value": "paragraph",  "label": "Paragraph" },
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" },
+        { "value": "h3", "label": "H3" },
+        { "value": "h4", "label": "H4" },
+        { "value": "h5", "label": "H5" },
+        { "value": "h6", "label": "H6" }
+      ],
+      "default": "h6"
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "Inherit color scheme",
+      "default": true
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ section.settings.inherit_color_scheme == false }}"
+    },
+    { "type": "header", "content": "Borders" },
+    {
+      "type": "select",
+      "id": "border",
+      "label": "Style",
+      "options": [
+        { "value": "none",  "label": "None"  },
+        { "value": "solid", "label": "Solid" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "min": 0, "max": 100, "step": 1, "unit": "px",
+      "label": "Thickness", "default": 1,
+      "visible_if": "{{ section.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_opacity",
+      "min": 0, "max": 100, "step": 1, "unit": "%",
+      "label": "Opacity", "default": 100,
+      "visible_if": "{{ section.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0, "max": 100, "step": 1, "default": 0
+    },
+    { "type": "header", "content": "Padding" },
+    { "type": "range", "id": "padding-block-start",  "label": "Top",    "min": 0, "max": 100, "step": 1, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding-block-end",    "label": "Bottom", "min": 0, "max": 100, "step": 1, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding-inline-start", "label": "Left",   "min": 0, "max": 100, "step": 1, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding-inline-end",   "label": "Right",  "min": 0, "max": 100, "step": 1, "unit": "px", "default": 0 }
+  ],
+  "blocks": [
+    {
+      "type": "tab_item_details",
+      "name": "Details tab",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "tab_label", "label": "Tab label", "default": "Details" },
+        { "type": "header", "content": "Field labels" },
+        { "type": "text", "id": "product_type_label",       "label": "Product type label",       "default": "Product Type" },
+        { "type": "text", "id": "mfg_category_label",       "label": "Category label",            "default": "Category" },
+        { "type": "text", "id": "style_label",               "label": "Style label",               "default": "Style" },
+        { "type": "text", "id": "secondary_style_label",     "label": "Secondary style label",     "default": "Secondary Style" },
+        { "type": "text", "id": "finish_label",              "label": "Finish label",              "default": "Finish" },
+        { "type": "text", "id": "material_label",            "label": "Material label",            "default": "Material" },
+        { "type": "text", "id": "shade_type_label",          "label": "Shade type label",          "default": "Shade Type" },
+        { "type": "text", "id": "mounting_type_label",       "label": "Mounting type label",       "default": "Mounting Type" },
+        { "type": "text", "id": "warranty_label",            "label": "Warranty label",            "default": "Warranty" },
+        { "type": "text", "id": "listing_and_rating_label",  "label": "Listing & rating label",    "default": "Listing & Rating" },
+        { "type": "text", "id": "safety_listing_label",      "label": "Safety listing label",      "default": "Safety Listing" },
+        { "type": "text", "id": "manufactured_in_label",     "label": "Manufactured in label",     "default": "Manufactured In" },
+        { "type": "text", "id": "sku_label",                 "label": "SKU label",                 "default": "SKU" },
+        { "type": "text", "id": "care_instructions_label",   "label": "Care instructions label",   "default": "Care Instructions" },
+        { "type": "text", "id": "shipping_method_label",     "label": "Shipping method label",     "default": "Ships Via" },
+        { "type": "header", "content": "California Prop 65" },
+        { "type": "text", "id": "california_label",          "label": "Prop 65 prefix label",     "default": "California residents" },
+        { "type": "text", "id": "california_button_text",    "label": "Prop 65 button text",      "default": "Prop 65 Warning" }
+      ]
+    },
+    {
+      "type": "tab_item_features",
+      "name": "Features tab",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "tab_label",      "label": "Tab label",      "default": "Features" },
+        { "type": "text", "id": "features_label", "label": "Features label", "default": "Features" }
+      ]
+    },
+    {
+      "type": "tab_item_lamping",
+      "name": "Lamping tab",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "tab_label", "label": "Tab label", "default": "Lamping" },
+        { "type": "text", "id": "light_source_label",         "label": "Light source label",         "default": "Light Source" },
+        { "type": "text", "id": "lamping_label",               "label": "Lamping label",              "default": "Lamping" },
+        { "type": "text", "id": "light_bulb_included_label",  "label": "Bulb included label",        "default": "Bulb Included" },
+        { "type": "text", "id": "number_of_sockets_label",    "label": "Number of sockets label",    "default": "Number of Sockets" },
+        { "type": "text", "id": "max_wattage_label",          "label": "Max wattage label",          "default": "Max Wattage" },
+        { "type": "text", "id": "delivered_lumens_label",     "label": "Delivered lumens label",     "default": "Delivered Lumens" },
+        { "type": "text", "id": "color_temp_label",           "label": "Color temperature label",    "default": "Color Temperature" },
+        { "type": "text", "id": "cri_label",                  "label": "CRI label",                  "default": "CRI" },
+        { "type": "text", "id": "voltage_label",              "label": "Voltage label",              "default": "Voltage" },
+        { "type": "text", "id": "socket_type_label",          "label": "Socket type label",          "default": "Socket Type" },
+        { "type": "text", "id": "bulb_shape_label",           "label": "Bulb shape label",           "default": "Bulb Shape" },
+        { "type": "text", "id": "dimmable_label",             "label": "Dimmable label",             "default": "Dimmable" },
+        { "type": "text", "id": "powersource_connection_label", "label": "Power source / connection label", "default": "Power Source / Connection" }
+      ]
+    },
+    {
+      "type": "tab_item_dimensions",
+      "name": "Dimensions tab",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "tab_label",              "label": "Tab label",               "default": "Dimensions" },
+        { "type": "text", "id": "width_label",            "label": "Width label",             "default": "Width (in)" },
+        { "type": "text", "id": "height_label",           "label": "Height label",            "default": "Height (in)" },
+        { "type": "text", "id": "length_label",           "label": "Length label",            "default": "Length (in)" },
+        { "type": "text", "id": "depth_label",            "label": "Depth/extension label",   "default": "Depth/Extension (in)" },
+        { "type": "text", "id": "weight_label",           "label": "Weight label",            "default": "Weight (lbs)" },
+        { "type": "text", "id": "chain_length_label",     "label": "Chain length label",      "default": "Chain Length" },
+        { "type": "text", "id": "hang_wire_length_label", "label": "Hang wire length label",  "default": "Hang Wire Length" },
+        { "type": "text", "id": "hang_rod_length_label",  "label": "Hang rod length label",   "default": "Hang Rod Length" },
+        { "type": "text", "id": "shade_size_label",       "label": "Shade size label",        "default": "Shade Size" },
+        { "type": "text", "id": "backplate_dimension_label", "label": "Backplate dimension label", "default": "Backplate Dimension" },
+        { "type": "header", "content": "Shipping / carton dimensions" },
+        { "type": "text", "id": "shipping_heading",       "label": "Container 1 sub-heading",  "default": "Shipping Dimensions (Box 1)" },
+        { "type": "text", "id": "shipping_heading_2",     "label": "Container 2 sub-heading",  "default": "Shipping Dimensions (Box 2)" },
+        { "type": "text", "id": "shipping_length_label",  "label": "Carton length label",     "default": "Carton Length (in)" },
+        { "type": "text", "id": "shipping_depth_label",   "label": "Carton depth label",      "default": "Carton Depth (in)" },
+        { "type": "text", "id": "shipping_height_label",  "label": "Carton height label",     "default": "Carton Height (in)" },
+        { "type": "text", "id": "shipping_weight_label",  "label": "Carton weight label",     "default": "Carton Weight (lbs)" }
+      ]
+    },
+    {
+      "type": "tab_item_technical",
+      "name": "Technical tab",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "tab_label",                 "label": "Tab label",                 "default": "Technical" },
+        { "type": "header", "content": "Download labels" },
+        { "type": "text", "id": "prodspec_label",            "label": "Product spec sheet label",  "default": "Product Spec Sheet" },
+        { "type": "text", "id": "instruction_label",         "label": "Instruction sheet label",   "default": "Installation/Assembly Sheet" },
+        { "type": "text", "id": "dimensional_image_label",   "label": "Dimensional image label",   "default": "Dimensional Drawing" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product Tabs Accordion",
+      "blocks": [
+        { "type": "tab_item_details" },
+        { "type": "tab_item_features" },
+        { "type": "tab_item_lamping" },
+        { "type": "tab_item_dimensions" },
+        { "type": "tab_item_technical" }
+      ]
+    }
+  ]
+}
+{% endschema %}

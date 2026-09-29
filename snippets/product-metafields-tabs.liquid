@@ -1,0 +1,104 @@
+{% comment %}
+  ============================================================
+  product-metafields-tabs.liquid — Toltec Home
+  ------------------------------------------------------------
+  Adapted from Varaluz Home's snippet of the same name.
+
+  Differences from the Varaluz version:
+  - fields_array entries are "namespace:key|label_setting"
+    instead of "key|label_setting", because Toltec's metafield
+    export mixes `custom` and `product` namespaces (Varaluz's
+    version hardcoded product.metafields.custom[key]).
+  - No 'socket_watt_placeholder' or 'warranty_placeholder'
+    special cases — Toltec has no variant/product split
+    placeholder fields for those; the general fallback below
+    already handles a plain custom.warranty / custom.max_wattage
+    field correctly.
+  - No 'shade_info' or 'finish_family' special-case parsing —
+    Toltec's shade_size and finish are plain
+    single_line_text_field values, not JSON-array or
+    dictionary-style metafields, so the general fallback
+    handles them.
+  - Added a 'selling_features' special case in place of
+    Varaluz's 'selling_point': Toltec's field is a
+    multi_line_text_field (plain newline-separated text)
+    rather than a list metafield, so it's split on line breaks
+    and rendered as a bullet list instead of looped as a list
+    value.
+
+  Inputs expected:
+  - fields_array (array of "namespace:key|label_setting")
+  - v (variant)
+  - product (product)
+  - b (block)
+{% endcomment %}
+{% for item in fields_array %}
+  {% assign parts = item | strip | split: '|' %}
+  {% assign mf_ref = parts[0] | strip | split: ':' %}
+  {% assign namespace = mf_ref[0] %}
+  {% assign key = mf_ref[1] %}
+  {% assign label_setting = parts[1] | strip %}
+
+  {% if key == 'selling_features' %}
+    {% assign variant_val = v.metafields.variant[key] %}
+    {% assign product_val = product.metafields[namespace][key] %}
+    {% assign final_val = variant_val | default: product_val %}
+
+    {% if final_val != blank %}
+      {% assign raw_text = final_val.value | default: final_val %}
+      {% assign lines = raw_text | newline_to_br | split: '<br />' %}
+      <div class="feature-section">
+        <strong>{{ b.settings[label_setting] }}</strong>:
+        <ul style="margin-top:8px; padding-left:20px; list-style-type:disc;">
+          {% for line in lines %}
+            {% assign trimmed = line | strip %}
+            {% if trimmed != blank %}
+              <li>{{ trimmed }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% continue %}
+  {% endif %}
+
+  {% assign variant_val = v.metafields.variant[key] %}
+  {% assign product_val = product.metafields[namespace][key] %}
+  {% assign final_val = variant_val | default: product_val %}
+
+  {% if final_val != blank %}
+    {% assign final_val_str = final_val | downcase | strip %}
+
+    {% if final_val_str == 'true' %}
+      <div><strong>{{ b.settings[label_setting] }}</strong>: Yes</div>
+      {% continue %}
+    {% elsif final_val_str == 'false' %}
+      <div><strong>{{ b.settings[label_setting] }}</strong>: No</div>
+      {% continue %}
+    {% endif %}
+
+    {% if final_val.value != null and final_val.unit != null %}
+      <div>
+        <strong>{{ b.settings[label_setting] }}</strong>: {{ final_val.value }}
+        {{ final_val.unit }}
+      </div>
+
+    {% elsif final_val.value != null and final_val.unit == null %}
+      <div>
+        <strong>{{ b.settings[label_setting] }}</strong>:
+        {% if final_val.value == true %}Yes
+        {% elsif final_val.value == false %}No
+        {% else %}{{ final_val.value }}{% endif %}
+      </div>
+
+    {% elsif final_val == 'true' %}
+      <div><strong>{{ b.settings[label_setting] }}</strong>: Yes</div>
+
+    {% elsif final_val == 'false' %}
+      <div><strong>{{ b.settings[label_setting] }}</strong>: No</div>
+
+    {% else %}
+      <div><strong>{{ b.settings[label_setting] }}</strong>: {{ final_val }}</div>
+    {% endif %}
+  {% endif %}
+{% endfor %}

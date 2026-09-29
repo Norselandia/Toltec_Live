@@ -1,0 +1,34 @@
+{%- doc -%}
+  Settings-only child block: defines one per-menu-item color override for
+  the header-menu block. Has no visual output of its own — header-menu.liquid
+  reads block.blocks looking for this type, and mega-menu-item.liquid matches
+  each instance's `menu_handle` setting against the current link's handle.
+{%- enddoc -%}
+
+{% schema %}
+{
+  "name": "Menu item color",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Colors one top-level menu item. Match it by handle: in Online Store \u2192 Navigation, open this menu and check the link's URL slug \u2014 it's usually the lowercase, hyphenated version of the title (e.g. \"Cluster Pendaliers\" \u2192 cluster-pendaliers)."
+    },
+    {
+      "type": "text",
+      "id": "menu_handle",
+      "label": "Menu item handle",
+      "info": "e.g. chandeliers"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color"
+    }
+  ]
+}
+{% endschema %}
