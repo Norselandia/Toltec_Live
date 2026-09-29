@@ -84,14 +84,19 @@
     case section_settings.layout_type
       when 'grid', 'carousel'
         assign calculated_width = 100 | divided_by: section_settings.columns | append: 'vw'
-        assign sizes = '(min-width: 750px) [calc-width], 100vw' | replace: '[calc-width]', calculated_width
+        assign mobile_columns = section_settings.mobile_columns | default: 1 | plus: 0
+        if mobile_columns < 1 or section_settings.carousel_on_mobile
+          assign mobile_columns = 1
+        endif
+        assign calculated_width_mobile = 100 | divided_by: mobile_columns | append: 'vw'
+        assign sizes = '(min-width: 750px) [calc-width], [calc-width-mobile]' | replace: '[calc-width-mobile]', calculated_width_mobile | replace: '[calc-width]', calculated_width
       when 'editorial', 'bento'
         assign loading = 'lazy'
         assign sizes = lazy_sizes
     endcase
   endif
 
-  assign widths = '240, 352, 832, 1200, 1600, 1920, 2560, 3840'
+  assign widths = '240, 352, 416, 600, 832, 1200, 1600, 1920, 2560, 3840'
 
   # Generate placeholder info based on content type
   if content_type == 'articles'

@@ -109,6 +109,15 @@
 
   assign fetch_priority = 'auto'
 
+  # Media shown on only one breakpoint is hidden with CSS, but a hidden <img> still downloads.
+  # Wrapping it in a <picture> whose <source> matches the other breakpoint with a blank GIF
+  # keeps it from competing with the visible hero image for bandwidth.
+  assign blank_gif = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+  assign desktop_media_is_desktop_only = true
+  if media_wrapper_desktop_class contains 'hero__media-wrapper--mobile'
+    assign desktop_media_is_desktop_only = false
+  endif
+
   if section.index == 1
     assign fetch_priority = 'high'
   endif
@@ -148,6 +157,10 @@
     </picture>
   {%- elsif media_1 == 'image' -%}
     <div class="{{ media_wrapper_desktop_class }}">
+      {%- if desktop_media_is_desktop_only -%}
+        <picture style="display: contents;">
+          <source media="(max-width: 749px)" srcset="{{ blank_gif }}">
+      {%- endif -%}
       {{
         section.settings.image_1
         | image_url: width: 3840
@@ -161,6 +174,9 @@
           fetchpriority: fetch_priority,
           data-testid: 'hero-desktop-image-1'
       }}
+      {%- if desktop_media_is_desktop_only -%}
+        </picture>
+      {%- endif -%}
     </div>
   {%- endif -%}
 
@@ -184,6 +200,8 @@
   {%- if media_count > 0 and media_count_mobile > 0 -%}
     {%- if media_1_mobile == 'image' and media_1 != 'image' -%}
       <div class="{{ media_wrapper_mobile_class }}">
+        <picture style="display: contents;">
+          <source media="(min-width: 750px)" srcset="{{ blank_gif }}">
         {{
           section.settings.image_1_mobile
           | image_url: width: 1600
@@ -197,6 +215,7 @@
             fetchpriority: fetch_priority,
             data-testid: 'hero-mobile-image-1'
         }}
+        </picture>
       </div>
     {%- endif -%}
 
@@ -252,6 +271,10 @@
     </picture>
   {%- elsif media_2 == 'image' -%}
     <div class="{{ media_wrapper_desktop_class }}">
+      {%- if desktop_media_is_desktop_only -%}
+        <picture style="display: contents;">
+          <source media="(max-width: 749px)" srcset="{{ blank_gif }}">
+      {%- endif -%}
       {{
         section.settings.image_2
         | image_url: width: 3840
@@ -265,6 +288,9 @@
           fetchpriority: fetch_priority,
           data-testid: 'hero-desktop-image-2'
       }}
+      {%- if desktop_media_is_desktop_only -%}
+        </picture>
+      {%- endif -%}
     </div>
   {%- endif -%}
 
@@ -288,6 +314,8 @@
   {%- if media_count > 0 and media_count_mobile > 0 -%}
     {%- if media_2_mobile == 'image' and media_2 != 'image' -%}
       <div class="{{ media_wrapper_mobile_class }}">
+        <picture style="display: contents;">
+          <source media="(min-width: 750px)" srcset="{{ blank_gif }}">
         {{
           section.settings.image_2_mobile
           | image_url: width: 1600
@@ -301,6 +329,7 @@
             fetchpriority: fetch_priority,
             data-testid: 'hero-mobile-image-2'
         }}
+        </picture>
       </div>
     {%- endif -%}
 
