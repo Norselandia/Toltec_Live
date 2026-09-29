@@ -57,6 +57,12 @@
     padding: inherit;
   }
 
+  /* Reserve the embed's space before it's inserted on scroll, so it doesn't shift the layout */
+  deferred-media[data-load-on-visible]:not([data-media-loaded]) {
+    display: block;
+    aspect-ratio: var(--size-style-aspect-ratio, 16 / 9);
+  }
+
   deferred-media.border-style {
     /* Apply the border radius to the video */
     overflow: hidden;

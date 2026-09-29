@@ -22,11 +22,34 @@ class DeferredMedia extends Component {
     // If we're to use deferred media for images, we will need to run this only when it's not an image type media
     document.addEventListener(ThemeEvents.mediaStartedPlaying, this.pauseMedia.bind(this), { signal });
     window.addEventListener(DialogCloseEvent.eventName, this.pauseMedia.bind(this), { signal });
+
+    if (this.hasAttribute('data-load-on-visible')) this.#loadWhenVisible();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#abortController.abort();
+    this.#visibilityObserver?.disconnect();
+  }
+
+  /** @type {IntersectionObserver | undefined} */
+  #visibilityObserver;
+
+  /**
+   * Defers inserting an autoplaying embed until it approaches the viewport
+   */
+  #loadWhenVisible() {
+    if (this.getAttribute('data-media-loaded')) return;
+
+    this.#visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        this.#visibilityObserver?.disconnect();
+        this.loadContent(false);
+      },
+      { rootMargin: '200px 0px' }
+    );
+    this.#visibilityObserver.observe(this);
   }
 
   /**

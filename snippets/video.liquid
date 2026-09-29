@@ -127,6 +127,9 @@
     {% if video_autoplay %}
       autoplay
     {% endif %}
+    {% if video_autoplay and video_from_url %}
+      data-load-on-visible
+    {% endif %}
     {{ additional_attributes }}
   >
     {% if video_preview_image != blank %}
@@ -177,7 +180,14 @@
       {% endif %}
     </template>
 
-    {% if video_autoplay or video_preview_image == blank %}
+    {%- comment -%}
+      Autoplaying YouTube/Vimeo embeds are not rendered inline: the player is ~1MB and would
+      compete with above-the-fold content. DeferredMedia inserts it from the template above
+      once it nears the viewport (see data-load-on-visible in media.js).
+    {%- endcomment -%}
+    {% if video_autoplay and video_from_url %}
+      {% comment %} Loaded on visibility {% endcomment %}
+    {% elsif video_autoplay or video_preview_image == blank %}
       {% if video_from_url %}
         {{ video_iframe }}
       {% else %}
